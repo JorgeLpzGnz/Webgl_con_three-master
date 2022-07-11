@@ -17,7 +17,7 @@ function init() {
     // document.addEventListener('scroll', () => {
     //     camera.position.x += scroll.positionY / 10000000000000
     // })
-    camera.position.z = 5
+    camera.position.z = 100
 
     renderer = new THREE.WebGL1Renderer()
     renderer.setSize(window.innerWidth, window.innerHeight)
@@ -35,8 +35,9 @@ function init() {
 
     renderer.render(scene, camera)
 
-    controls = new OrbitControls(camera, renderer.domElement)
-    console.log(controls.scope)
+    // controls = new OrbitControls(camera, renderer.domElement)
+    // controls.maxZoom = 20
+    // console.log(controls.scope)
 
     light = new THREE.DirectionalLight(0xffffff)
     light.position.set(0, 30, 10)
@@ -47,7 +48,7 @@ function init() {
 
 function animate() {
     animationFrame = requestAnimationFrame(animate)
-    controls.update()
+    // controls.update()
     renderer.render(scene, camera)
 }
 
@@ -82,7 +83,19 @@ function setObjectModel(model){
     object = new THREE.Mesh(
         model,
         new THREE.MeshLambertMaterial({Color: 0x00ff00 }))
-    object.scale.set(0.09, 0.09, 0.09)
-    object.position.set(1.5, -2, 0)
+    object.scale.set(1, 1, 1)
+    console.log(object)
+    object.position.set(0, 0, 0)
+    object.translate(1, 1 , 1)
     object.rotation.x = -Math.PI / 2
+    window.addEventListener('wheel', (event) => {
+        if(event.deltaY < 0) {
+            object.rotation.z += 0.5
+            camera.position.y += 1
+        }
+        if(event.deltaY > 0) {
+            object.rotation.z -= 0.5
+            camera.position.y -= 1
+        }
+    })
 }

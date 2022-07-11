@@ -997,21 +997,43 @@ class OrbitControls extends EventDispatcher {
 
 		}
 
+		// personalizado
+
+		let scaleRange = 0
+
 		function PersonalizeOnmouseWheel( event ){
 
-			if( event.deltaY > 0) rotateLeft(getAutoRotationAngle() * 100)
+			console.log(scope.maxZoom)
 
-			if( event.deltaY < 0) rotateRight(getAutoRotationAngle() * 100)
+			if( event.deltaY > 0 && scaleRange <= scope.maxZoom) {
 
-			if ( scope.enabled === false || scope.enableZoom === false || state !== STATE.NONE ) return;
+				rotateLeft(getAutoRotationAngle() * 100)
 
-			event.preventDefault();
+				event.preventDefault();
+	
+				scope.dispatchEvent( _startEvent );
+	
+				handleMouseWheel( event );
+	
+				scope.dispatchEvent( _endEvent );
 
-			scope.dispatchEvent( _startEvent );
+				scaleRange++
+			}
 
-			handleMouseWheel( event );
+			if( event.deltaY < 0 && scaleRange >= scope.minZoom) {
 
-			scope.dispatchEvent( _endEvent );
+				rotateRight(getAutoRotationAngle() * 100)
+
+				event.preventDefault();
+	
+				scope.dispatchEvent( _startEvent );
+	
+				handleMouseWheel( event );
+	
+				scope.dispatchEvent( _endEvent );
+
+				scaleRange--
+			}
 		}
 
 		function onMouseWheel( event ) {
@@ -1231,7 +1253,7 @@ class OrbitControls extends EventDispatcher {
 		//
 
 		scope.domElement.addEventListener( 'contextmenu', onContextMenu );
-
+		// personalizado
 		// scope.domElement.addEventListener( 'pointerdown', onPointerDown );
 		scope.domElement.addEventListener( 'pointercancel', onPointerCancel );
 		scope.domElement.addEventListener( 'wheel', PersonalizeOnmouseWheel, { passive: false } );
