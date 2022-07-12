@@ -1,89 +1,72 @@
 import * as THREE from "./threejs/three.module.js";
-
 import { GLTFLoader } from "./threejs/GLTFLoader.js";
+import { Water } from "./threejs/Water.js";
+import { RectAreaLightHelper } from './jsm/helpers/RectAreaLightHelper.js';
+import { RectAreaLightUniformsLib } from './jsm/lights/RectAreaLightUniformsLib.js';
 import * as SkeletonUtils from "./threejs/SkeletonUtils.js";
-import { OrbitControls } from './threejs/OrbitControls.js'
+import { Lensflare, LensflareElement } from "./threejs/Lensflare.js";
+import { OrbitControls } from "./threejs/OrbitControls.js";
 
-let camera, scene, renderer;
-let clock, model3, camaraFocus;
+let camera, scene, renderer, modelRotationValue, cameraYPosition;
+let clock, model3, water;
+
+let scrollValue = window.scrollY;
+modelRotationValue = -scrollValue / 1000;
+if (modelRotationValue > -6.5) {
+  modelRotationValue = -scrollValue / 1000;
+  cameraYPosition = -scrollValue / 5000 + 1.5;
+} else {
+  modelRotationValue = -6.5;
+  cameraYPosition = 0.2;
+}
 
 const mixers = [];
 
-init();
-animate();
-
 function init() {
+  // camera
+
   camera = new THREE.PerspectiveCamera(
     45,
     window.innerWidth / window.innerHeight,
     1,
     1000
   );
-  camaraFocus = 1.5
-  camera.position.set(1.2, 2, 1);
-  camera.lookAt(0, camaraFocus, 0);
+  camera.position.set(1.2, cameraYPosition, 5);
+  camera.lookAt(0, cameraYPosition, 0);
+
+  // track of time
 
   clock = new THREE.Clock();
 
+  // scene
+
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000);
-  // scene.fog = new THREE.Fog(0xa0a0a0, 10, 50);
+  scene.background = new THREE.Color(0x000928);
+  scene.fog = new THREE.Fog(0x000928, 1, 10)
+  addWater()
 
-  const hemiLight = new THREE.DirectionalLight(0xffffff);
-  hemiLight.position.set(0, 20, 0);
-  scene.add(hemiLight);
+  // add ligths
 
-  // const dirLight = new THREE.DirectionalLight(0xffffff);
-  // dirLight.position.set(-3, 10, -10);
-  // dirLight.castShadow = true;
-  // dirLight.shadow.camera.top = 10;
-  // dirLight.shadow.camera.bottom = -10;
-  // dirLight.shadow.camera.left = -10;
-  // dirLight.shadow.camera.right = 5;
-  // dirLight.shadow.camera.near = 0.1;
-  // dirLight.shadow.camera.far = 40;
-  // scene.add(dirLight);
+  const rectLight = new THREE.RectAreaLight( 0xffffff, 10,  2, 6 );
+  rectLight.position.set( 0, 0, 0 );
+  rectLight.lookAt( 0, 0, 0 );
+  scene.add( rectLight )
 
-  // scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
+  // //Set up shadow properties for the light
+  // light.shadow.mapSize.width = 1000; // default
+  // light.shadow.mapSize.height = 1000; // default
+  // light.shadow.camera.near = 0.5; // default
+  // light.shadow.camera.far = 500; //
 
-  // ground
+  addPointerLight(0.9, 1.2, 0.9);
+  addPointerLight(-0.9, 1.2, -0.9);
+  addPointerLight(0, 1, 1, 0.5);
 
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshPhongMaterial({ color: 0x000, depthWrite: false })
-  );
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.receiveShadow = true;
-  scene.add(mesh);
+  // add model
 
-  const loader = new GLTFLoader();
-  loader.load("./3dModels/Soldier.glb", function (gltf) {
-    gltf.scene.traverse(function (object) {
-      if (object.isMesh) object.castShadow = true;
-    });
+  addGltfModel();
 
-    // const model1 = SkeletonUtils.clone(gltf.scene);
-    // const model2 = SkeletonUtils.clone(gltf.scene);
-    model3 = SkeletonUtils.clone(gltf.scene);
-
-    // const mixer1 = new THREE.AnimationMixer(model1);
-    // const mixer2 = new THREE.AnimationMixer(model2);
-    const mixer3 = new THREE.AnimationMixer(model3);
-
-    // mixer1.clipAction(gltf.animations[0]).play(); // idle
-    // mixer2.clipAction(gltf.animations[1]).play(); // run
-    mixer3.clipAction(gltf.animations[3]).play(); // walk
-
-    // model1.position.x = -2;
-    // model2.position.x = 0;
-    model3.position.x = 0;
-    model3.rotation.y = 4
-
-    scene.add(model3);
-    mixers.push(mixer3);
-    window.addEventListener('wheel', handleScroll)
-    animate();
-  });
+  // render
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -91,44 +74,122 @@ function init() {
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.shadowMap.enabled = true;
   document.body.appendChild(renderer.domElement);
-
-
-
-  // const controls = new OrbitControls(camera, renderer.domElement)
-  // controls.maxZoom = 20
-
   window.addEventListener("resize", onWindowResize);
 }
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function animate() {
+  render()
   requestAnimationFrame(animate);
-
   const delta = clock.getDelta();
-
   for (const mixer of mixers) mixer.update(delta);
-
   renderer.render(scene, camera);
 }
 
-function handleScroll( event ){
-  if(event.deltaY < 0 && camera.position.y < 2) {
-    model3.rotation.y += 0.1
-    camera.position.y += 0.01
-    camaraFocus += 0.01
-    camera.lookAt(0, camaraFocus, 0);
+function handleScroll() {
+  modelRotationValue = -window.scrollY / 1000;
+  cameraYPosition = -window.scrollY / 5000 + 1.5;
+
+  if (modelRotationValue > -6.5) {
+    model3.rotation.y = modelRotationValue;
+    camera.position.y = cameraYPosition;
+    camera.lookAt(0, cameraYPosition, 0);
+  }
 }
-if(event.deltaY > 0 && camera.position.y > 0.75) {
-    model3.rotation.y -= 0.1
-    camera.position.y -= 0.01
-    console.log(camera.position.y)
-    camaraFocus -= 0.01
-    camera.lookAt(0, camaraFocus, 0);
+
+function addGltfModel() {
+  const loader = new GLTFLoader();
+
+  loader.load("./3dModels/Soldier.glb", function (gltf) {
+    gltf.scene.traverse(function (object) {
+      if (object.isMesh) object.castShadow = true;
+    });
+
+    // model
+
+    model3 = gltf.scene;
+    model3.receiveShadow = true;
+    model3.castShadow = true;
+    console.log(model3);
+
+    // animation
+
+    const mixer3 = new THREE.AnimationMixer(model3);
+    mixer3.clipAction(gltf.animations[3]).play(); // walk
+
+    // position
+
+    model3.position.x = 0;
+    model3.rotation.y = modelRotationValue;
+    model3.position.y = 0;
+    scene.add(model3);
+    mixers.push(mixer3);
+    window.addEventListener("scroll", handleScroll);
+    animate();
+  });
 }
+
+function addPointerLight(x, y, z) {
+  // ligths
+
+  const light = new THREE.PointLight(0xffffff);
+
+  // postion
+
+  light.position.set(x, y, z);
+
+  // ligth texture
+
+  const textureLoader = new THREE.TextureLoader();
+  const textureFlare0 = textureLoader.load("./img/textures/ligth.png");
+  const lensflare = new Lensflare();
+  lensflare.addElement(new LensflareElement(textureFlare0, 512, 0));
+
+  light.add(lensflare);
+  light.intensity = 0.2;
+
+  // put on the scene
+  scene.add(light);
 }
+
+function addWater() {
+
+  const waterGeometry = new THREE.PlaneGeometry(200, 200);
+
+  water = new Water(waterGeometry, {
+
+    textureWidth: 50,
+    textureHeight: 50,
+    waterNormals: new THREE.TextureLoader().load(
+      "./threejs/waternormals.jpg",
+      function (texture) {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      }
+    ),
+    sunDirection: new THREE.Vector3(),
+    waterColor: 0x001e0f,
+    distortionScale: 1,
+    fog: scene.fog !== undefined,
+  });
+
+  water.rotation.x = -Math.PI / 2;
+  water.position.y = 0.1
+
+  scene.add(water);
+}
+
+function render() {
+
+  water.material.uniforms[ 'time' ].value += 2.0 / 600;
+
+  renderer.render( scene, camera );
+
+}
+
+init();
+animate();
