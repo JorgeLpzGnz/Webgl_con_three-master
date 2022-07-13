@@ -1,8 +1,8 @@
 import * as THREE from "./threejs/three.module.js";
 import { GLTFLoader } from "./threejs/GLTFLoader.js";
 import { Water } from "./threejs/Water.js";
-import { RectAreaLightHelper } from './threejs/RectAreaLightHelper.js';
-import { RectAreaLightUniformsLib } from './threejs/RectAreaLightUniformsLib.js';
+import { RectAreaLightHelper } from "./threejs/RectAreaLightHelper.js";
+import { RectAreaLightUniformsLib } from "./threejs/RectAreaLightUniformsLib.js";
 import { Lensflare, LensflareElement } from "./threejs/Lensflare.js";
 import { OrbitControls } from "./threejs/OrbitControls.js";
 
@@ -41,10 +41,10 @@ function init() {
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000);
-  scene.fog = new THREE.Fog(0x000, 1, 4)
-  addWater()
+  // scene.fog = new THREE.Fog(0x000, 1, 4)
+  // addWater()
 
-  // addFloor( 0x495057 )
+  addFloor(0x495057);
 
   // add ligths
 
@@ -57,8 +57,8 @@ function init() {
   // add Rect Ligth params:
   // [ color, intensity, positionX, positionY, positionZ, lookAtXPosition, lookAtYPosition, lookAtZPosition, ]
 
-  addRectLight( 0x868e96, 10, 1, 2, -1, 1, 0, 0, 1, 0 )
-  addRectLight( 0xffffff, 100, 1, 0.1, 1, 2, 0, 0, 1, 0 )
+  addRectLight(0x868e96, 10, 1, 2, -1, 1, 0, 0, 1, 0);
+  addRectLight(0xffffff, 100, 1, 0.1, 1, 2, 0, 0, 1, 0);
 
   // addPointerLight(0.9, 1.2, 0.9);
   // addPointerLight(-0.9, 1.2, -0.9);
@@ -86,7 +86,9 @@ function onWindowResize() {
 }
 
 function animate() {
-  render()
+  if (water) {
+    render();
+  }
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
   for (const mixer of mixers) mixer.update(delta);
@@ -95,13 +97,34 @@ function animate() {
 
 function handleScroll() {
   modelRotationValue = -window.scrollY / 1000;
-  cameraYPosition = -window.scrollY / 5000 + 1.5;
+  cameraYPosition = -window.scrollY / 5000 + 1.7;
+  let cameraZPosition = -Math.cos(Math.sin(window.scrollY / 1000) + 1.5);
 
   if (modelRotationValue > -6.5) {
     model3.rotation.y = modelRotationValue;
     camera.position.y = cameraYPosition;
     camera.lookAt(0, cameraYPosition, 0);
+    camera.position.z = cameraZPosition;
   }
+}
+
+function addFBXModel() {
+  const loader = new FBXLoader();
+  loader.load("models/fbx/Samba Dancing.fbx", function (object) {
+    mixer = new THREE.AnimationMixer(object);
+
+    const action = mixer.clipAction(object.animations[0]);
+    action.play();
+
+    object.traverse(function (child) {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
+    scene.add(object);
+  });
 }
 
 function addGltfModel() {
@@ -158,24 +181,31 @@ function addPointerLight(x, y, z) {
   scene.add(light);
 }
 
-function addRectLight( color, intensity, width, height, positionX, positionY, positionZ, lookAtX, lookAtY, lookAtZ ) {
+function addRectLight(
+  color,
+  intensity,
+  width,
+  height,
+  positionX,
+  positionY,
+  positionZ,
+  lookAtX,
+  lookAtY,
+  lookAtZ
+) {
+  RectAreaLightUniformsLib.init();
 
-  RectAreaLightUniformsLib.init()
-
-  const rectLight = new THREE.RectAreaLight( color, intensity,  width, height );
-  rectLight.position.set( positionX, positionY, positionZ );
-  rectLight.lookAt( lookAtX, lookAtY, lookAtZ );
-  scene.add( rectLight )
-  rectLight.add( new RectAreaLightHelper( rectLight ) )
-
+  const rectLight = new THREE.RectAreaLight(color, intensity, width, height);
+  rectLight.position.set(positionX, positionY, positionZ);
+  rectLight.lookAt(lookAtX, lookAtY, lookAtZ);
+  scene.add(rectLight);
+  rectLight.add(new RectAreaLightHelper(rectLight));
 }
 
 function addWater() {
-
   const waterGeometry = new THREE.PlaneGeometry(200, 200);
 
   water = new Water(waterGeometry, {
-
     textureWidth: 50,
     textureHeight: 50,
     waterNormals: new THREE.TextureLoader().load(
@@ -191,29 +221,32 @@ function addWater() {
   });
 
   water.rotation.x = -Math.PI / 2;
-  water.position.y = 0.1
+  water.position.y = 0.1;
 
   scene.add(water);
 }
 
-function addFloor( color ) {
+function addFloor(color) {
   const floor = new THREE.Mesh(
-    new THREE.BoxGeometry( 2000, 0.1, 2000),
+    new THREE.BoxGeometry(2000, 0.1, 2000),
     new THREE.MeshStandardMaterial({
       color: color,
       roughness: 0,
-      metalness: 0.6
+      metalness: 1,
     })
-  )
-  scene.add(floor)
+  );
+  const ldrUrls = ["px.png", "nx.png", "py.png", "ny.png", "pz.png", "nz.png"];
+  const texture = new THREE.CubeTextureLoader()
+    .setPath("./img/textures/pisa/")
+    .load(ldrUrls);
+  floor.material.envMap = texture;
+  scene.add(floor);
 }
 
 function render() {
+  water.material.uniforms["time"].value += 2.0 / 600;
 
-  water.material.uniforms[ 'time' ].value += 2.0 / 600;
-
-  renderer.render( scene, camera );
-
+  renderer.render(scene, camera);
 }
 
 init();

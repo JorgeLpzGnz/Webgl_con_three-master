@@ -1,12 +1,12 @@
-import * as THREE from "three";
+import * as THREE from "./threejs/three.module.js";
 
-import Stats from "./jsm/libs/stats.module.js";
+import Stats from "./threejs/stats.module.js";
 
-import { GUI } from "./jsm/libs/lil-gui.module.min.js";
-import { OrbitControls } from "./jsm/controls/OrbitControls.js";
-import { HDRCubeTextureLoader } from "./jsm/loaders/HDRCubeTextureLoader.js";
-import { RGBMLoader } from "./jsm/loaders/RGBMLoader.js";
-import { DebugEnvironment } from "./jsm/environments/DebugEnvironment.js";
+import { GUI } from "./threejs/lil-gui.module.min.js";
+import { OrbitControls } from "./threejs/OrbitControls.js";
+import { HDRCubeTextureLoader } from "./threejs/HDRCubeTextureLoader.js";
+import { RGBMLoader } from "./threejs/RGBMLoader.js";
+import { DebugEnvironment } from "./threejs/DebugEnvironment.js";
 
 const params = {
   envMap: "HDR",
@@ -74,7 +74,7 @@ function init() {
 
   const hdrUrls = ["px.hdr", "nx.hdr", "py.hdr", "ny.hdr", "pz.hdr", "nz.hdr"];
   hdrCubeMap = new HDRCubeTextureLoader()
-    .setPath("./textures/cube/pisaHDR/")
+    .setPath("./img/textures/pisaHDR/")
     .load(hdrUrls, function () {
       hdrCubeRenderTarget = pmremGenerator.fromCubemap(hdrCubeMap);
 
@@ -84,7 +84,7 @@ function init() {
 
   const ldrUrls = ["px.png", "nx.png", "py.png", "ny.png", "pz.png", "nz.png"];
   ldrCubeMap = new THREE.CubeTextureLoader()
-    .setPath("./textures/cube/pisa/")
+    .setPath("./img/textures/pisa/")
     .load(ldrUrls, function () {
       ldrCubeMap.encoding = THREE.sRGBEncoding;
 
@@ -94,7 +94,7 @@ function init() {
   const rgbmUrls = ["px.png", "nx.png", "py.png", "ny.png", "pz.png", "nz.png"];
   rgbmCubeMap = new RGBMLoader()
     .setMaxRange(16)
-    .setPath("./textures/cube/pisaRGBM16/")
+    .setPath("./img/textures/pisaRGBM16/")
     .loadCubemap(rgbmUrls, function () {
       rgbmCubeRenderTarget = pmremGenerator.fromCubemap(rgbmCubeMap);
     });
