@@ -1,10 +1,10 @@
-import * as THREE from "./threejs/three.module.js";
-import { GLTFLoader } from "./threejs/GLTFLoader.js";
-import { Water } from "./threejs/Water.js";
-import { RectAreaLightHelper } from "./threejs/RectAreaLightHelper.js";
-import { RectAreaLightUniformsLib } from "./threejs/RectAreaLightUniformsLib.js";
-import { Lensflare, LensflareElement } from "./threejs/Lensflare.js";
-import { OrbitControls } from "./threejs/OrbitControls.js";
+import * as THREE from "./three.module.js";
+import { GLTFLoader } from "./GLTFLoader.js";
+import { FBXLoader } from "./FBXLoader.js"
+import { Water } from "./Water.js";
+import { RectAreaLightHelper } from "./RectAreaLightHelper.js";
+import { RectAreaLightUniformsLib } from "./RectAreaLightUniformsLib.js";
+import { Lensflare, LensflareElement } from "./Lensflare.js";
 
 let camera, scene, renderer, modelRotationValue, cameraYPosition;
 let clock, model3, water;
@@ -110,7 +110,7 @@ function handleScroll() {
 
 function addFBXModel() {
   const loader = new FBXLoader();
-  loader.load("models/fbx/Samba Dancing.fbx", function (object) {
+  loader.load("./Strut Walking.fbx", function (object) {
     mixer = new THREE.AnimationMixer(object);
 
     const action = mixer.clipAction(object.animations[0]);
@@ -130,7 +130,7 @@ function addFBXModel() {
 function addGltfModel() {
   const loader = new GLTFLoader();
 
-  loader.load("./3dModels/Soldier.glb", function (gltf) {
+  loader.load("./Soldier.glb", function (gltf) {
     gltf.scene.traverse(function (object) {
       if (object.isMesh) object.castShadow = true;
     });
@@ -209,7 +209,7 @@ function addWater() {
     textureWidth: 50,
     textureHeight: 50,
     waterNormals: new THREE.TextureLoader().load(
-      "./threejs/waternormals.jpg",
+      "./waternormals.jpg",
       function (texture) {
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
       }
@@ -235,11 +235,11 @@ function addFloor(color) {
       metalness: 1,
     })
   );
-  const ldrUrls = ["px.png", "nx.png", "py.png", "ny.png", "pz.png", "nz.png"];
-  const texture = new THREE.CubeTextureLoader()
-    .setPath("./img/textures/pisa/")
-    .load(ldrUrls);
-  floor.material.envMap = texture;
+  // const ldrUrls = ["px.png", "nx.png", "py.png", "ny.png", "pz.png", "nz.png"];
+  // const texture = new THREE.CubeTextureLoader()
+  //   .setPath("./img/textures/pisa/")
+  //   .load(ldrUrls);
+  // floor.material.envMap = texture;
   scene.add(floor);
 }
 
