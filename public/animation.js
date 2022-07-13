@@ -1,9 +1,8 @@
 import * as THREE from "./threejs/three.module.js";
 import { GLTFLoader } from "./threejs/GLTFLoader.js";
 import { Water } from "./threejs/Water.js";
-import { RectAreaLightHelper } from './jsm/helpers/RectAreaLightHelper.js';
-import { RectAreaLightUniformsLib } from './jsm/lights/RectAreaLightUniformsLib.js';
-import * as SkeletonUtils from "./threejs/SkeletonUtils.js";
+import { RectAreaLightHelper } from './threejs/RectAreaLightHelper.js';
+import { RectAreaLightUniformsLib } from './threejs/RectAreaLightUniformsLib.js';
 import { Lensflare, LensflareElement } from "./threejs/Lensflare.js";
 import { OrbitControls } from "./threejs/OrbitControls.js";
 
