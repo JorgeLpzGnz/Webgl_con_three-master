@@ -7,19 +7,27 @@ import { RectAreaLightUniformsLib } from "./RectAreaLightUniformsLib.js";
 import { Lensflare, LensflareElement } from "./Lensflare.js";
 
 let camera, scene, renderer, modelRotationValue, cameraYPosition;
-let clock, model3, water;
-
-let scrollValue = window.scrollY;
-modelRotationValue = -scrollValue / 1000;
-if (modelRotationValue > -6.5) {
-  modelRotationValue = -scrollValue / 1000;
-  cameraYPosition = -scrollValue / 5000 + 1.5;
-} else {
-  modelRotationValue = -6.5;
-  cameraYPosition = 0.2;
-}
-
+let clock, model3, water, mixer;
 const mixers = [];
+
+function setPositionAndRotation(){
+
+  let scrollValue = window.scrollY;
+  modelRotationValue = -scrollValue / 1000;
+
+  if (modelRotationValue > -6.5) {
+
+    modelRotationValue = -scrollValue / 1000;
+    cameraYPosition = -scrollValue / 5000 + 1.5;
+
+  } else {
+
+    modelRotationValue = -6.5;
+    cameraYPosition = 0.2;
+
+  }
+
+}
 
 function init() {
   // camera
@@ -30,8 +38,8 @@ function init() {
     1,
     1000
   );
-  camera.position.set(1.2, cameraYPosition, 2);
-  camera.lookAt(0, cameraYPosition, 0);
+  camera.position.set( 1 , cameraYPosition, 2);
+  camera.lookAt(0, 0, 0);
 
   // track of time
 
@@ -60,13 +68,14 @@ function init() {
   addRectLight(0x868e96, 10, 1, 2, -1, 1, 0, 0, 1, 0);
   addRectLight(0xffffff, 100, 1, 0.1, 1, 2, 0, 0, 1, 0);
 
-  // addPointerLight(0.9, 1.2, 0.9);
+  addPointerLight(0.9, 1.2, 0.9);
   // addPointerLight(-0.9, 1.2, -0.9);
   // addPointerLight(0, 1, 1, 0.5);
 
   // add model
 
   addGltfModel();
+  // addFBXModel()
 
   // render
 
@@ -95,51 +104,96 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+let minZPosition = .5
+let cameraZPosition = minZPosition
+
 function handleScroll() {
+
   modelRotationValue = -window.scrollY / 1000;
-  cameraYPosition = -window.scrollY / 5000 + 1.7;
-  let cameraZPosition = -Math.cos(Math.sin(window.scrollY / 1000) + 1.5);
+  cameraYPosition = - window.scrollY / 5000 + 1.5;
+  if(Math.sin(window.scrollY / 1000) < 0) cameraZPosition = Math.sin(window.scrollY / 1000) - 0.7;
+  if(Math.sin(window.scrollY / 1000) > 0) cameraZPosition = Math.sin(window.scrollY / 1000) + 0.7;
+  console.log('cameraZPosition' ,cameraZPosition)
+  console.log('cameraYPosition',cameraYPosition)
+  console.log('modelRotationValue',modelRotationValue)
+  
 
   if (modelRotationValue > -6.5) {
+
+    console.log(camera)
     model3.rotation.y = modelRotationValue;
     camera.position.y = cameraYPosition;
-    camera.lookAt(0, cameraYPosition, 0);
+    camera.lookAt(0,  + cameraYPosition, 0);
     camera.position.z = cameraZPosition;
+
   }
+
 }
 
+// function addFBXModel() {
+//   const loader = new FBXLoader();
+//   loader.load("./Strut Walking.fbx", function (object) {
+//     mixer = new THREE.AnimationMixer(object);
+
+//     const action = mixer.clipAction(object.animations[0]);
+//     action.play();
+
+//     object.traverse(function (child) {
+//       if (child.isMesh) {
+//         child.castShadow = true;
+//         child.receiveShadow = true;
+//       }
+//     });
+
+//     scene.add(object);
+//   });
+// }
+
 function addFBXModel() {
+
   const loader = new FBXLoader();
   loader.load("./Strut Walking.fbx", function (object) {
-    mixer = new THREE.AnimationMixer(object);
 
-    const action = mixer.clipAction(object.animations[0]);
-    action.play();
+    mixer = new THREE.AnimationMixer(object);
+    mixer.clipAction(object.animations[1]).play();
+    console.log(object.animations)
 
     object.traverse(function (child) {
+
       if (child.isMesh) {
+
         child.castShadow = true;
         child.receiveShadow = true;
+
       }
+
     });
 
+    object.scale.set(0.01, 0.01, 0.01)
+    object.position.set( 0, 0, 0 )
     scene.add(object);
+
   });
+
 }
 
 function addGltfModel() {
+
   const loader = new GLTFLoader();
 
   loader.load("./Soldier.glb", function (gltf) {
+
     gltf.scene.traverse(function (object) {
-      if (object.isMesh) object.castShadow = true;
+
+      if (object.isMesh) {
+        object.castShadow = true
+        object.receiveShadow = true;
+
+      }
+
     });
 
-    // model
-
     model3 = gltf.scene;
-    model3.receiveShadow = true;
-    model3.castShadow = true;
 
     // animation
 
@@ -155,6 +209,7 @@ function addGltfModel() {
     mixers.push(mixer3);
     window.addEventListener("scroll", handleScroll);
     animate();
+
   });
 }
 
@@ -193,6 +248,7 @@ function addRectLight(
   lookAtY,
   lookAtZ
 ) {
+
   RectAreaLightUniformsLib.init();
 
   const rectLight = new THREE.RectAreaLight(color, intensity, width, height);
@@ -200,40 +256,58 @@ function addRectLight(
   rectLight.lookAt(lookAtX, lookAtY, lookAtZ);
   scene.add(rectLight);
   rectLight.add(new RectAreaLightHelper(rectLight));
+
 }
 
 function addWater() {
+
   const waterGeometry = new THREE.PlaneGeometry(200, 200);
 
   water = new Water(waterGeometry, {
+
     textureWidth: 50,
+
     textureHeight: 50,
+
     waterNormals: new THREE.TextureLoader().load(
+
       "./waternormals.jpg",
+
       function (texture) {
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
       }
+
     ),
+
     sunDirection: new THREE.Vector3(),
+
     waterColor: 0x001e0f,
+
     distortionScale: 1,
+
     fog: scene.fog !== undefined,
+
   });
 
   water.rotation.x = -Math.PI / 2;
   water.position.y = 0.1;
-
   scene.add(water);
+
 }
 
 function addFloor(color) {
+
   const floor = new THREE.Mesh(
+
     new THREE.BoxGeometry(2000, 0.1, 2000),
     new THREE.MeshStandardMaterial({
+
       color: color,
       roughness: 0,
       metalness: 1,
+
     })
+
   );
   // const ldrUrls = ["px.png", "nx.png", "py.png", "ny.png", "pz.png", "nz.png"];
   // const texture = new THREE.CubeTextureLoader()
@@ -244,10 +318,12 @@ function addFloor(color) {
 }
 
 function render() {
+
   water.material.uniforms["time"].value += 2.0 / 600;
 
   renderer.render(scene, camera);
 }
 
+setPositionAndRotation()
 init();
 animate();
